@@ -1,0 +1,15 @@
+{
+  "name": "t_pane",
+  "version": "1.0.0",
+  "description": "A sub-module for display scripture",
+  "main": "View.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+  },
+  "dependencies": {
+    "babel-preset-react": "^6.16.0"
+  }
+}
