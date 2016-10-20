@@ -1,5 +1,5 @@
 {
-  "name": "t_pane",
+  "name": "TPane",
   "version": "1.0.0",
   "description": "A sub-module for display scripture",
   "main": "View.js",
