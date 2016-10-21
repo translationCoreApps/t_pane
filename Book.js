@@ -67,7 +67,7 @@ class Book extends React.Component {
     }
     for (var key in keysSorted) {
       var objectKey = keysSorted[key];
-      if (this.props.input.hasOwnProperty(objectKey) && objectKey !== 'title') {
+      if (this.props.input.hasOwnProperty(objectKey) && objectKey !== 'title' && objectKey !== 'header') {
         var chapterNum = parseInt(objectKey);
         var arrayOfVerses = [];
         for (var verse in this.props.input[objectKey]) {
