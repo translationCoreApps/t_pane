@@ -17,9 +17,10 @@ function fetchData(params, progress, callback) {
   if (!targetLanguage) {
     if (!params.targetLanguagePath) {
       console.error('TPane requires a filepath');
-    }
-    else {
-      dispatcher.schedule(function (subCallback) { sendToReader(params.targetLanguagePath, subCallback); });
+    } else {
+      dispatcher.schedule(function (subCallback) {
+        sendToReader(params.targetLanguagePath, subCallback);
+      });
     }
   }
 
@@ -27,11 +28,9 @@ function fetchData(params, progress, callback) {
   if (!originalLanguage) {
     if (!params.originalLanguagePath) {
       console.error("Can't find original language");
-    }
-    else {
+    } else {
       dispatcher.schedule(function (subCallback) {
-        readInOriginal(path.join(params.originalLanguagePath, bookAbbreviationToBookPath(params.bookAbbr)),
-          params.bookAbbr, subCallback);
+        readInOriginal(path.join(params.originalLanguagePath, bookAbbreviationToBookPath(params.bookAbbr)), params.bookAbbr, subCallback);
       });
     }
   }
@@ -65,16 +64,14 @@ class Dispatcher {
       callback();
     }
     for (var job of this.jobs) {
-      job(
-        function () {
-          missingChunks = 0;
-          doneJobs++;
-          progress((doneJobs / _this.jobs.length) * 100);
-          if (doneJobs >= _this.jobs.length) {
-            callback();
-          }
+      job(function () {
+        missingChunks = 0;
+        doneJobs++;
+        progress(doneJobs / _this.jobs.length * 100);
+        if (doneJobs >= _this.jobs.length) {
+          callback();
         }
-      );
+      });
     }
   }
 }
@@ -100,10 +97,10 @@ function sendToReader(file, callback) {
 * @param {string} manifest - The manifest.json file
 ******************************************************************************/
 function readInManifest(manifest, source, callback) {
-    var bookTitle;
+  var bookTitle;
   if (manifest.ts_project) {
     bookTitle = manifest.ts_project.name;
-  }  else  {
+  } else {
     bookTitle = manifest.project.name;
   }
   let bookTitleSplit = bookTitle.split(' ');
@@ -116,15 +113,14 @@ function readInManifest(manifest, source, callback) {
   for (let chapterVerse in finishedChunks) {
     if (finishedChunks.hasOwnProperty(chapterVerse)) {
       let splitted = finishedChunks[chapterVerse].split('-');
-      openUsfmFromChunks(splitted, currentJoined, total, source,
-        function () {
-          done++;
-          if (done >= (total - missingChunks)) {
-            missingChunks = 0;
-            api.putDataInCommon('targetLanguage', currentJoined);
-            callback();
-          }
-        });
+      openUsfmFromChunks(splitted, currentJoined, total, source, function () {
+        done++;
+        if (done >= total - missingChunks) {
+          missingChunks = 0;
+          api.putDataInCommon('targetLanguage', currentJoined);
+          callback();
+        }
+      });
     }
   }
 }
@@ -132,22 +128,19 @@ function readInManifest(manifest, source, callback) {
 function readInOriginal(path, bookAbbr, callback) {
   var originalLanguage = api.getDataFromCommon("params").originalLanguage;
   try {
-  var data = fs.readFileSync(path).toString();
-    if (!data) {
-    }
-    else {
+    var data = fs.readFileSync(path).toString();
+    if (!data) {} else {
       var betterData = typeof data == 'object' ? JSON.stringify(data) : data;
       openOriginal(betterData, api.convertToFullBookName(bookAbbr));
       if (originalLanguage == "hebrew") {
         parseHebrew();
-      }
-      else {
+      } else {
         parseGreek();
       }
       callback();
     }
-    } catch(error) {
-      console.log(error);
+  } catch (error) {
+    console.log(error);
   }
 }
 
@@ -162,12 +155,11 @@ function openUsfmFromChunks(chunk, currentJoined, totalChunk, source, callback) 
     var fileName = chunk[1] + '.txt';
     var chunkLocation = path.join(source, chunk[0], fileName);
     var data = fs.readFileSync(chunkLocation);
-    if (!data) {
-    }
+    if (!data) {}
     joinChunks(data.toString(), currentChapter, currentJoined);
     callback();
   } catch (error) {
-        missingChunks++;
+    missingChunks++;
   }
 }
 /**
@@ -224,38 +216,44 @@ function len(obj) {
   * @description parses the incoming greek and modifies it to be ready
 */
 function parseGreek() {
-  // looking at it now, this method with the regex may be way less efficient
-  // than just splitting the verse by spaces and going word by word
-  // this might want to be reworked later for efficiency
-  var greekRegex = /([^\w\s,.\-?!\(\)]+)\s+G(\d{1,6})\s+(?:G\d{1,6})*\s*([A-Z0-9\-]+)/g;
   var lex = require("./Lexicon.json");
   let origText = api.getDataFromCommon("originalLanguage");
   let parsedText = {};
   for (let ch in origText) {
-    if (!parseInt(ch)) { // skip the title
+    if (!parseInt(ch)) {
+      // skip the title
       continue;
     }
     parsedText[ch] = {};
     let chap = origText[ch];
     for (let v in chap) {
-      let origVerse = origText[ch][v];
+      let origVerseFull = origText[ch][v];
+      let origVerse = origVerseFull.split(" ");
       let verse = parsedText[ch][v] = [];
-      let result = [];
-      while (result = greekRegex.exec(origVerse)) {
-        let [, word, strong, speech] = result;
+      var word;
+      var strong = "Strong Missing";
+      var brief = "Brief Missing";
+      var long = "Long Missing";
+      for (var element in origVerse) {
         try {
-          let {brief, long} = lex[strong];
-          verse.push({ word, strong, speech, brief, long });
+          var currentElement = origVerse[element];
+          var nextElement = origVerse[parseInt(element) + 1];
+          if (isNaN(currentElement[currentElement.length - 1]) && !isNaN(nextElement[nextElement.length - 1])) {
+            word = currentElement;
+            strong = nextElement;
+            brief = lex[strong].brief;
+            long = lex[strong].long;
+            verse.push({ word, strong, brief, long});
+          }
+        } catch (e) {
+          if (word) {
+            //verse.push({ word, strong, brief });
+          }
         }
-        catch (e) {
-          verse.push({ word, strong, speech, brief: "No definition found", long: "No definition found" });
-        }
-
       }
     }
   }
   api.putDataInCheckStore("TPane", 'parsedGreek', parsedText);
-  //Put the parsed Hebrew into the checkstore in the Object format specified here
 }
 
 function parseHebrew() {
@@ -263,7 +261,8 @@ function parseHebrew() {
   let origText = api.getDataFromCommon("originalLanguage");
   let parsedText = {};
   for (let ch in origText) {
-    if (!parseInt(ch)) { // skip the title
+    if (!parseInt(ch)) {
+      // skip the title
       continue;
     }
     parsedText[ch] = {};
@@ -285,8 +284,7 @@ function parseHebrew() {
             brief = lex[strong].strongs_def;
             verse.push({ word, strong, brief });
           }
-        }
-        catch (e) {
+        } catch (e) {
           if (word) {
             //verse.push({ word, strong, brief });
           }
