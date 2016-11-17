@@ -190,7 +190,7 @@ function joinChunks(text, currentChapter, currentJoined) {
 ******************************************************************************/
 function openOriginal(text, bookName) {
   var input = JSON.parse(text);
-  input[stripSpaces(bookName)].title = bookName;
+  input[bookName].title = bookName;
   var newData = {};
   for (var chapter in input[bookName]) {
     newData[parseInt(chapter)] = {};
