@@ -200,7 +200,7 @@ function openOriginal(text, bookName) {
   }
   // CoreActions.updateOriginalLanguage(input[bookName]);
   //make new function to put straight into common as array?
-  api.putDataInCommon('originalLanguage', input[stripSpaces(bookName)]);
+  api.putDataInCommon('originalLanguage', input[bookName]);
 }
 
 function len(obj) {
